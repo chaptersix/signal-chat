@@ -1,0 +1,69 @@
+syntax = "proto3";
+package chat;
+option go_package = "./proto";
+
+// Chat service definition
+service ChatService {
+  rpc RegisterPublicKey (RegisterPublicKeyRequest) returns (RegisterPublicKeyResponse);
+  rpc GetPublicKeys (GetPublicKeysRequest) returns (GetPublicKeysResponse);
+  rpc GetConnectedClients (GetConnectedClientsRequest) returns (GetConnectedClientsResponse);
+  rpc SendMessage (MessageRequest) returns (MessageResponse);
+  rpc ReceiveMessages (stream ClientRequest) returns (stream Message);
+}
+
+message PublicKey {
+  string client_id = 1;
+  bytes key = 2; // Marshaled ECDSA public key (uncompressed format)
+}
+
+message EncryptedKey {
+  bytes s_ephem_key = 1; // Marshaled ephemeral public key
+  bytes nonce = 2;
+  bytes ciphertext = 3; // Encrypted symmetric key
+}
+
+message EncryptedMessage {
+  bytes nonce = 1;
+  bytes ciphertext = 2; // Encrypted message content
+}
+
+message MessageRequest {
+  string sender = 1;
+  EncryptedMessage encrypted_message = 2;
+  map<string, EncryptedKey> encrypted_keys = 3;
+}
+
+message MessageResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message ClientRequest {
+  string client_id = 1;
+}
+
+message Message {
+  string sender = 1;
+  EncryptedMessage encrypted_message = 2;
+  map<string, EncryptedKey> encrypted_keys = 3;
+  int64 timestamp = 4;
+}
+
+message RegisterPublicKeyRequest {
+  string client_id = 1;
+  bytes key = 2;
+}
+
+message RegisterPublicKeyResponse {}
+
+message GetPublicKeysRequest {}
+
+message GetPublicKeysResponse {
+  repeated PublicKey public_keys = 1;
+}
+
+message GetConnectedClientsRequest {}
+
+message GetConnectedClientsResponse {
+  repeated string client_ids = 1;
+}
